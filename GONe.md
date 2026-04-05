@@ -36,51 +36,56 @@ bcftools view -S list_UK.txt $ORIG_VCF -Oz -o Clouded_UK.vcf.gz
 #### Runnign CurrentNe using the subsampling stuff.
 
 ```bash
-#!/bin/bash -l
-#SBATCH --job-name=Clouded_Pop_Split
-#SBATCH --cpus-per-task=16
-#SBATCH --mem=64G
-#SBATCH --time=24:00:00
-#SBATCH --partition=batch
+# Path to your actual original VCF
+ORIGINAL_VCF="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/Clouded_leopard_27samples_autosomes_biallelic.vcf.gz"
 
-# Load necessary modules
-module load gcc-14.2.0
-# Check if bcftools is available on your cluster
-module load bcftools || echo "BCFtools not found, ensure it is in your PATH"
+# Target path for the subsampled file
+MASTER_2M="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/subsampled_2M.vcf"
 
-# SET PATHS
-MASTER_VCF="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/Clouded_leopard_27samples_autosomes_biallelic.vcf.gz"
-BINARY="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/currentNe/currentNe"
+echo "Extracting header..."
+bcftools view -h "$ORIGINAL_VCF" > "$MASTER_2M"
+
+echo "Randomly sampling 2,000,000 SNPs... this may take a moment."
+bcftools view -H "$ORIGINAL_VCF" | shuf -n 2000000 >> "$MASTER_2M"
+
+echo "Subsampling complete. Verification:"
+ls -lh "$MASTER_2M"
+``
+
+#### Running currentNe finally
+```bash
+# Set variables again just to be sure
 BASE_DIR="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2"
+BINARY="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/currentNe/currentNe"
+MASTER_VCF="${BASE_DIR}/subsampled_2M.vcf"
 
-# 1. SUBSAMPLE 2,000,000 SNPs
-# We use bcftools 'view' with a random seed to pull 2M SNPs
-echo "Subsampling 2,000,000 SNPs..."
-bcftools view -h $MASTER_VCF > subsampled_2M.vcf
-bcftools view -H $MASTER_VCF | shuf -n 2000000 >> subsampled_2M.vcf
-
-# 2. SPLIT INTO POPULATIONS
 POPS=("China" "UK" "USA")
 LISTS=("list_China.txt" "list_UK.txt" "list_USA.txt")
 
 for i in "${!POPS[@]}"; do
     POP_NAME=${POPS[$i]}
     SAMPLE_LIST="${BASE_DIR}/${LISTS[$i]}"
-    OUT_VCF="${BASE_DIR}/${POP_NAME}_subsampled.vcf"
+    OUT_VCF="${BASE_DIR}/${POP_NAME}_final_input.vcf"
     
-    echo "Creating VCF for $POP_NAME..."
-    # Extracts only the samples in the list for this pop
-    bcftools view -S $SAMPLE_LIST subsampled_2M.vcf > $OUT_VCF
+    echo "--- Processing $POP_NAME ---"
     
-    # 3. RUN CURRENTNE
+    # 1. Clean the sample list (removes hidden spaces/columns)
+    awk '{print $1}' "$SAMPLE_LIST" > "${SAMPLE_LIST}.clean"
+    
+    # 2. Extract population samples from the 2M master file
+    bcftools view -S "${SAMPLE_LIST}.clean" "$MASTER_VCF" --force-samples > "$OUT_VCF"
+    
     echo "Running currentNe for $POP_NAME..."
     mkdir -p "${BASE_DIR}/Results_${POP_NAME}"
     
-    $BINARY $OUT_VCF 18 \
-        -t $SLURM_CPUS_PER_TASK \
-        -o "${BASE_DIR}/Results_${POP_NAME}/${POP_NAME}_CNe"
+    # 3. Run the analysis
+    $BINARY "$OUT_VCF" 18 \
+        -t 16 \
+        -v 1 \
+        -o "${BASE_DIR}/Results_${POP_NAME}/${POP_NAME}_CNe_Results"
+        
+    echo "DONE with $POP_NAME"
 done
 
-echo "All populations processed at $(date)"
-``
+```
 
