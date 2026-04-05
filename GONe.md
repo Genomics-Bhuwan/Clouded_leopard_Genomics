@@ -12,17 +12,28 @@ printf "SAMN32324412\nSAMN32324413\nSAMN32324414\nSAMN32324415\nSAMN32324416\nSA
 #### Step 1. Split the biallelic vcf of the clouded leopard with all the 27 samples.
 
 ```bash
-# Define the original VCF as a variable for easy typing
-ORIG_VCF="Clouded_leopard_27samples_autosomes_biallelic.vcf.gz"
+mkdir -p /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/China
+mkdir -p /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/UK
+mkdir -p /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/USA
 
-# 1. China VCF
-bcftools view -S list_China.txt $ORIG_VCF -Oz -o Clouded_China.vcf.gz
+#### Subsetting each population.
+bcftools view -S /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/list_China.txt \
+  -Oz -o /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/China/China.vcf.gz \
+  /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/Clouded_leopard_27samples_autosomes_biallelic.vcf.gz
 
-# 2. USA VCF
-bcftools view -S list_USA.txt $ORIG_VCF -Oz -o Clouded_USA.vcf.gz
+bcftools view -S /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/list_UK.txt \
+  -Oz -o /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/UK/UK.vcf.gz \
+  /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/Clouded_leopard_27samples_autosomes_biallelic.vcf.gz
 
-# 3. UK VCF
-bcftools view -S list_UK.txt $ORIG_VCF -Oz -o Clouded_UK.vcf.gz
+bcftools view -S /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/list_USA.txt \
+  -Oz -o /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/USA/USA.vcf.gz \
+  /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/Clouded_leopard_27samples_autosomes_biallelic.vcf.gz
+
+
+####index each file
+bcftools index /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/China/China.vcf.gz
+bcftools index /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/UK/UK.vcf.gz
+bcftools index /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/USA/USA.vcf.gz
 ```
 
 #### Note:
@@ -36,56 +47,17 @@ bcftools view -S list_UK.txt $ORIG_VCF -Oz -o Clouded_UK.vcf.gz
 #### Runnign CurrentNe using the subsampling stuff.
 
 ```bash
-# Path to your actual original VCF
-ORIGINAL_VCF="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/Clouded_leopard_27samples_autosomes_biallelic.vcf.gz"
 
-# Target path for the subsampled file
-MASTER_2M="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/subsampled_2M.vcf"
+Run currentNe
+For each population, run:
 
-echo "Extracting header..."
-bcftools view -h "$ORIGINAL_VCF" > "$MASTER_2M"
 
-echo "Randomly sampling 2,000,000 SNPs... this may take a moment."
-bcftools view -H "$ORIGINAL_VCF" | shuf -n 2000000 >> "$MASTER_2M"
+/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/China/plink/currentNe -k 0 -s 70000 -o China_currentNe \
+  /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/China/China.vcf.gz 18
 
-echo "Subsampling complete. Verification:"
-ls -lh "$MASTER_2M"
-``
+/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/China/plink/currentNe -k 0 -s 70000 -o UK_currentNe \
+  /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/UK/UK.vcf.gz 18
 
-#### Running currentNe finally
-```bash
-# Set variables again just to be sure
-BASE_DIR="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2"
-BINARY="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/currentNe/currentNe"
-MASTER_VCF="${BASE_DIR}/subsampled_2M.vcf"
-
-POPS=("China" "UK" "USA")
-LISTS=("list_China.txt" "list_UK.txt" "list_USA.txt")
-
-for i in "${!POPS[@]}"; do
-    POP_NAME=${POPS[$i]}
-    SAMPLE_LIST="${BASE_DIR}/${LISTS[$i]}"
-    OUT_VCF="${BASE_DIR}/${POP_NAME}_final_input.vcf"
-    
-    echo "--- Processing $POP_NAME ---"
-    
-    # 1. Clean the sample list (removes hidden spaces/columns)
-    awk '{print $1}' "$SAMPLE_LIST" > "${SAMPLE_LIST}.clean"
-    
-    # 2. Extract population samples from the 2M master file
-    bcftools view -S "${SAMPLE_LIST}.clean" "$MASTER_VCF" --force-samples > "$OUT_VCF"
-    
-    echo "Running currentNe for $POP_NAME..."
-    mkdir -p "${BASE_DIR}/Results_${POP_NAME}"
-    
-    # 3. Run the analysis
-    $BINARY "$OUT_VCF" 18 \
-        -t 16 \
-        -v 1 \
-        -o "${BASE_DIR}/Results_${POP_NAME}/${POP_NAME}_CNe_Results"
-        
-    echo "DONE with $POP_NAME"
-done
-
+/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/China/plink/currentNe -k 0 -s 70000 -o USA_currentNe \
+  /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/Clouded_leopard_GONe/GONE2/USA/USA.vcf.gz 18
 ```
-
