@@ -1,4 +1,4 @@
-#### Variant effect predictor for Clouded leopard
+#### Variant effect predictor for Clouded leopard.
 
 ################################  POLARIZING ############################
 
