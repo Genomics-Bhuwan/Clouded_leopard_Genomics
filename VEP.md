@@ -182,15 +182,17 @@ bedtools getfasta -fi $FASTA -bed $BED -fo $OUT_FILE
 ```
 #### Step 5. Reformat the Ancestral Alleles.
 ```bash
-# 1. Extract just the DNA letters from the bedtools output
+# 1. Extract just the DNA letters
 grep -v ">" ancestral_alleles.out > alleles_only.txt
 
-# 2. Get the SNP IDs (Chromosome:Position) from your FIXED bed file
-# Note: We use the 3rd column (actual position) to match PLINK's @:# format
-awk '{print $1":"$3}' Clouded_leopard_SNPs_Coordinates.bed > positions_only.txt
+# 2. Extract and format the IDs from the headers 
+# This looks for the '>' lines, removes the '>', and picks the Chromosome + End Position
+grep ">" ancestral_alleles.out | sed 's/>//g' | awk -F'[:-]' '{print $1":"$3}' > positions_only.txt
 
-# 3. Paste them together to make the reference file
+# 3. Paste them together
+# Result: NC_080782.1:12540 C
 paste positions_only.txt alleles_only.txt > ancestral_alleles.txt
+
 ```
 
 #### Step 6. Prepare the VCF IDs.
@@ -233,17 +235,17 @@ awk '{print $1}' ancestral_alleles.txt > ancestral_positions.txt
 - Remove the SNPs where the ancestral letter doesn't match the Clouded_leopard letters (e.g., Ancestral has "A", but Clouded_leopard only has "C/G")
 ```bash
 # 1. Identify the mismatches from the log file
-grep 'Warning' temp_Clouded_leopard_polarized.log | awk '{print $7}' | sed 's/.//;s/.$//' > mismatches.txt
+grep "Impossible A2" Clouded_leopard_POLARIZED.log | awk '{print $NF}' | sed 's/\.$//' > mismatches.txt
 
 # 2. Create the final, clean, polarized VCF
 # Final PLINK clean-up using absolute paths
 /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink \
-  --vcf temp_Clouded_leopard_polarized.vcf \
+  --vcf Clouded_leopard_POLARIZED.vcf \
   --exclude mismatches.txt \
   --allow-extra-chr \
   --const-fid 0 \
   --recode vcf \
-  --out /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Clouded_leopard_POLARIZED_Final
+  --out /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Clouded_leopard_POLARIZED_Final.vcf
 
 # 3. Clean up the temporary files to save space
 rm temp_Clouded_leopard.vcf temp_Clouded_leopard_polarized.vcf alleles_only.txt positions_only.txt
@@ -269,24 +271,24 @@ tabix -p gff /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_
 
 ##### Step 9.b. Run the VEP
 ```bash
-singularity exec -B /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/ensembl-vep/ensembl-vep_latest.sif \
---input_file /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Clouded_leopard_POLARIZED_Final.vcf \
---output_file /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated_Individuals.txt \
---fasta /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/GCF_028018385.1_mNeoNeb1.pri_genomic.fna \
---gff /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/GCF_028018385.1_mNeoNeb1.pri_genomic.gff \
---dir_cache Final_VEP/vep_cache \
---species Clouded_leopard \
---cache \
---offline \
---protein \
---biotype \
---pick \
---fork 8 \
---no_stats \
---buffer_size 10000 \
---force_overwrite \
---warning_file Final_VEP/vep_warnings.txt \
---individual all
+singularity exec \
+  -B /shared/jezkovt_bistbs_shared \
+  /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/ensembl-vep/ensembl-vep_latest.sif \
+  vep \
+  --input_file /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Clouded_leopard_POLARIZED_Final.vcf \
+  --output_file /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated_Individuals.txt \
+  --fasta /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/GCF_028018385.1_mNeoNeb1.pri_genomic.fna \
+  --gff /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/GCF_028018385.1_mNeoNeb1.pri_genomic_sorted.gff.gz \
+  --dir_cache /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/dummy_vep_cache \
+  --cache \
+  --offline \
+  --everything \
+  --pick \
+  --fork 8 \
+  --buffer_size 5000 \
+  --force_overwrite \
+  --warning_file /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/vep_warnings.txt \
+  --individual all
 ```
 
 #### Step 10. Filter sites by the Consequences
