@@ -355,12 +355,12 @@ OUTDIR=/shared/jezkovt_bistbs_shared/Guam_Rail/Heterozygosity/Comparative_genomi
 
 for i in missense synonymous lof intergenic
 do
-    /shared/jezkovt_bistbs_shared/Guam_Rail/Heterozygosity/Comparative_genomics/VEP_Polarization/rail_outgroup_consensus/Plink_For_Next_Step/plink \
+   /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink \
         --vcf Clouded_leopard_${i}_snps.recode.vcf \
         --export A-transpose \
         --allow-extra-chr \
         --double-id \
-        --out ${OUTDIR}/Guam_rail_${i}_genotypes
+        --out ${OUTDIR}/Clouded_leopard_${i}_genotypes
 done
 ```
 
