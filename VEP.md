@@ -329,44 +329,55 @@ Bash
 #### Step 10. b. Create ID Lists
 - use awk to turn the VEP locations into a format vcftools understands(Chromosome and Position).
 ```bash
-cat Clouded_leopard_missense_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/," ",$1)};1' > missense_IDs.txt
-cat  Clouded_leopard_synonymous_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/," ",$1)};1' > synonymous_IDs.txt
-cat  Clouded_leopard_lof_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/," ",$1)};1' > lof_IDs.txt
-cat  Clouded_leopard_intergenic_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/," ",$1)};1' > intergenic_IDs.txt
+# ID फाइलहरू बनाउने (अहिलेकै फोल्डरमा बस्ने गरी)
+grep -v "^#" Clouded_leopard_missense_sites.txt | awk '{print $2}' | tr ':' '\t' > missense_IDs.txt
+grep -v "^#" Clouded_leopard_synonymous_sites.txt | awk '{print $2}' | tr ':' '\t' > synonymous_IDs.txt
+grep -v "^#" Clouded_leopard_lof_sites.txt | awk '{print $2}' | tr ':' '\t' > lof_IDs.txt
+grep -v "^#" Clouded_leopard_intergenic_sites.txt | awk '{print $2}' | tr ':' '\t' > intergenic_IDs.txt
 ```
 #### Step 10.c Extract the Genotypes from the polarized vcf
 - Go to the polarized vcf and pull out the only SNPs taht fall into these categories.
 ```bash
-for i in missense synonymous lof intergenic
-do
-    vcftools --vcf /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Clouded_leopard_POLARIZED_Final.vcf \
-    --recode \
-    --recode-INFO-all \
-    --positions ${i}_IDs.txt \
-    --out Clouded_leopard_${i}_snps
-done
-```
-#### Step 10.d. Convert to PLINK(The A-transpose format)
-- This is the most important part for the R analysis.
-- Use Plink --export A-transposae.
-- This creates a .traw file where: Rows= SNPs, Columns - five individuals(SRR IDs); Values = 0, 1 or 2 (number of derived alleles).
-```bash
-# Set your output directory clearly
-# Define the specific subdirectory for output
-OUTDIR="./Extract_Genotypes"
+# 1. Define Absolute Paths
+# Setting base directory to ensure all relative paths are resolved correctly
+BASE_DIR="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP"
+OUTDIR="${BASE_DIR}/Final_Annotation/Extract_Genotypes"
+POLAR_VCF="${BASE_DIR}/Clouded_leopard_POLARIZED_Final.vcf"
 
-# Ensure the directory exists before running
+# Specify the Plink binary path
+PLINK_BIN="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink"
+
+# Create the output directory if it doesn't already exist
 mkdir -p $OUTDIR
 
-for i in missense synonymous lof intergenic
+# 2. Main Processing Loop
+# Iterate through each variant category to extract genotypes
+for type in missense synonymous lof intergenic
 do
-    /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink \
-        --vcf Clouded_leopard_${i}_snps.recode.vcf \
+    echo "------------------------------------------"
+    echo "Processing $type sites..."
+    
+    # Extract specific SNPs from the polarized VCF using the coordinate lists
+    # Output is saved as a temporary recoded VCF
+    vcftools --vcf $POLAR_VCF \
+        --positions ./${type}_IDs.txt \
+        --recode --recode-INFO-all \
+        --out ${OUTDIR}/temp_${type}
+
+    # Convert the filtered VCF to PLINK A-transpose (.traw) format
+    # This creates a count matrix (0, 1, 2) of derived alleles for R analysis
+    $PLINK_BIN --vcf ${OUTDIR}/temp_${type}.recode.vcf \
         --export A-transpose \
         --allow-extra-chr \
         --double-id \
-        --out ${OUTDIR}/Clouded_leopard_${i}_genotypes
+        --out ${OUTDIR}/Clouded_leopard_${type}_genotypes
+
+    # Remove temporary VCF files to save disk space
+    rm ${OUTDIR}/temp_${type}.recode.vcf
 done
+
+echo "------------------------------------------"
+echo "Extraction Complete. Files are located in: $OUTDIR"
 ```
 
 #### Step 11. Visualization for the plots
@@ -478,3 +489,86 @@ ggsave("Dama_Gazelle_MER_HighRes_Final.pdf",
 print("Figures with increased font sizes saved successfully.")
 ```
 
+
+
+
+###### Old style try
+#### Counting the variants
+```bash
+grep -v "^#" /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated_Individuals.txt | wc -l > /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Try_OLD_style/variant_count.txt
+
+#### check unique variant sites
+
+grep -v "^#" /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated_Individuals.txt | cut -f1,2 | sort -u | wc -l > /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Try_OLD_style/unique_variant_sites.txt
+```
+#### Classify the types of variants
+```bash
+1. Extract Synonymous Variants
+
+awk -F'\t' '$7 == "synonymous_variant"' /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated_Individuals.txt > /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Try_OLD_style/Clouded_leopard_synonymous.txt
+
+2. Extract Missense Variants
+These are your protein-coding changes that might be under selection or contribute to phenotypic differences.
+
+awk -F'\t' '$7 == "missense_variant"' /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated_Individuals.txt > /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Try_OLD_style/Clouded_leopard_missense.txt
+
+3. Extract All HIGH Impact Variants
+This includes the 549 stop_gained, 290 splice_acceptor, and other loss-of-function variants. Filtering by the "IMPACT" column (usually column 14) is better than filtering by "Consequence" here, as it catches all types of damaging mutations in one go.
+
+awk -F'\t' '$14 ~ /IMPACT=HIGH/' /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated_Individuals.txt > /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Try_OLD_style/Clouded_leopard_HIGH_impact.txt
+
+#### Summarize the high impact genes
+- It shows the names of the genes and their counts
+grep "IMPACT=HIGH" Clouded_leopard_HIGH_impact.txt | sed 's/.*SYMBOL=\([^;]*\);.*/\1/' | sort | uniq -c | sort -rn
+
+```
+
+#### 1. Generate a clean list of the 27 Sample IDs from the file itself
+grep -o "IND=[^;]*" Clouded_leopard_missense.txt | sed 's/IND=//' | sort | uniq > sample_ids.txt
+
+echo "Individual,High_Impact,Moderate_Impact,Synonymous" > impact_counts.csv
+
+# 2. Loop through each ID and count occurrences in the three files
+while read -r id; do
+    # We use -F (fixed string) and match the specific ID
+    high=$(grep -c "$id" Clouded_leopard_HIGH_impact.txt)
+    mod=$(grep -c "$id" Clouded_leopard_missense.txt)
+    syn=$(grep -c "$id" Clouded_leopard_synonymous.txt)
+    
+    echo "$id,$high,$mod,$syn" >> impact_counts.csv
+    echo "Done: $id"
+done < sample_ids.txt
+
+# 3. View the final table
+column -s, -t impact_counts.csv
+```
+
+#### Count the realized vs. masked load
+```bash
+Prepare the Data (Linux/Unix Terminal)
+You need to separate your counts based on the genotype (0/1 for Masked, 1/1 for Realized). This script will update your impact_counts.csv with these new columns.
+
+Bash
+echo "Individual,Category,Load_Type,Count" > realized_masked_counts.csv
+
+while read -r id; do
+    for type in "HIGH_impact" "missense" "synonymous"; do
+        # Mapping your file names to the chart categories
+        if [[ "$type" == "HIGH_impact" ]]; then cat_label="High"; fi
+        if [[ "$type" == "missense" ]]; then cat_label="Moderate"; fi
+        if [[ "$type" == "synonymous" ]]; then cat_label="Low"; fi
+        
+        file="Clouded_leopard_${type}.txt"
+        
+        # Count Masked (Heterozygous 0/1)
+        masked=$(grep -w "$id" "$file" | grep -c "0/1")
+        # Count Realized (Homozygous 1/1)
+        realized=$(grep -w "$id" "$file" | grep -c "1/1")
+        
+        echo "$id,$cat_label,Masked,$masked" >> realized_masked_counts.csv
+        echo "$id,$cat_label,Realized,$realized" >> realized_masked_counts.csv
+    done
+done < sample_ids.txt
+```
+
+#### Visualization 
