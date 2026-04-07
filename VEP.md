@@ -201,15 +201,13 @@ paste positions_only.txt alleles_only.txt > ancestral_alleles.txt
 cd /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output
 
 # Run the conversion
-# Run PLINK using the absolute path to the binary
-/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink \
-  --vcf /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Clouded_leopard_27samples_RefSeq_Standardized.vcf.gz \
+/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink --vcf /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Clouded_leopard_27samples_RefSeq_Standardized.vcf.gz \
   --set-missing-var-ids @:# \
   --allow-extra-chr \
   --recode vcf \
   --const-fid 0 \
   --real-ref-alleles \
-  --out /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/temp_Clouded_leopard
+  --out temp_Clouded_leopard
 ```
 
 #### Step 7. Polarize (Big Switch)
@@ -220,8 +218,9 @@ awk '{print $1}' ancestral_alleles.txt > ancestral_positions.txt
 
 # 2. Run the polarization
 # Run PLINK with absolute paths for the binary and the standardized VCF
-/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink \
-  --vcf temp_Clouded_leopard.vcf \
+# Run the polarization
+# Run the polarization
+/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink --vcf /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/temp_Clouded_leopard.vcf \
   --extract ancestral_positions.txt \
   --a2-allele ancestral_alleles.txt 2 1 \
   --recode vcf \
@@ -328,10 +327,10 @@ Bash
 #### Step 10. b. Create ID Lists
 - use awk to turn the VEP locations into a format vcftools understands(Chromosome and Position).
 ```bash
-cat missense_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/," ",$1)};1' > missense_IDs.txt
-cat synonymous_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/," ",$1)};1' > synonymous_IDs.txt
-cat lof_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/," ",$1)};1' > lof_IDs.txt
-cat intergenic_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/," ",$1)};1' > intergenic_IDs.txt
+cat Clouded_leopard_missense_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/," ",$1)};1' > missense_IDs.txt
+cat  Clouded_leopard_synonymous_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/," ",$1)};1' > synonymous_IDs.txt
+cat  Clouded_leopard_lof_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/," ",$1)};1' > lof_IDs.txt
+cat  Clouded_leopard_intergenic_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/," ",$1)};1' > intergenic_IDs.txt
 ```
 #### Step 10.c Extract the Genotypes from the polarized vcf
 - Go to the polarized vcf and pull out the only SNPs taht fall into these categories.
@@ -351,11 +350,15 @@ done
 - This creates a .traw file where: Rows= SNPs, Columns - five individuals(SRR IDs); Values = 0, 1 or 2 (number of derived alleles).
 ```bash
 # Set your output directory clearly
-OUTDIR=/shared/jezkovt_bistbs_shared/Guam_Rail/Heterozygosity/Comparative_genomics/VEP_Polarization/rail_outgroup_consensus/Plink_For_Next_Step/Final_VEP/Final_Annotation
+# Define the specific subdirectory for output
+OUTDIR="./Extract_Genotypes"
+
+# Ensure the directory exists before running
+mkdir -p $OUTDIR
 
 for i in missense synonymous lof intergenic
 do
-   /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink \
+    /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink \
         --vcf Clouded_leopard_${i}_snps.recode.vcf \
         --export A-transpose \
         --allow-extra-chr \
