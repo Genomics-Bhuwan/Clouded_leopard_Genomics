@@ -283,21 +283,22 @@ tabix -p gff /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_
 ##### Step 11.Run the VEP
 ```bash
 singularity exec \
-  -B /shared/jezkovt_bistbs_shared \
+  -B /shared/jezkovt_bistbs_shared:/shared/jezkovt_bistbs_shared \
   /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/ensembl-vep/ensembl-vep_latest.sif \
   vep \
-  --input_file /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Clouded_leopard_FINAL_FIXED.vcf \
+  --input_file Clouded_leopard_FINAL_FIXED.vcf \
   --output_file /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated.txt \
   --fasta /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/GCF_028018385.1_mNeoNeb1.pri_genomic.fna \
   --gff /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/GCF_028018385.1_mNeoNeb1.pri_genomic_sorted.gff.gz \
   --dir_cache /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/vep_cache \
   --species clouded_leopard \
-  --use_given_ref \
   --offline \
   --everything \
   --pick \
+  --use_given_ref \
   --individual all \
-  --show_ref_allele \
+  --fork 20 \
+  --buffer_size 10000 \
   --force_overwrite
 ```
 
