@@ -305,35 +305,37 @@ singularity exec \
 #### Step 12. Filter sites by the Consequences
 #### Step 12.a Filter site by the consequences
 ```bash
-# Filter for LoF, missense, synonymous, and intergenic
-# 1. Filter for Missense variants
+1. Filter for Missense Variants
+Use this to get amino acid changing mutations (Moderate impact).
 
-#1. Filter for Missense Variants
-/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/ensembl-vep/filter_vep \
-  -i /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated_Individuals.txt \
-  -o /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Clouded_leopard_missense_sites.txt \
-  --filter "Consequence is missense_variant"
-
-
-#2. Filter for Synonymous Variants
-
-/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/ensembl-vep/filter_vep \
-  -i /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated_Individuals.txt \
-  -o /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Clouded_leopard_synonymous_sites.txt \
-  --filter "Consequence is synonymous_variant"
-
-#3. Filter for Loss of Function (LoF) & Splicing
-
-/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/ensembl-vep/filter_vep \
-  -i /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated_Individuals.txt \
-  -o /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Clouded_leopard_lof_sites.txt \
-  --filter "Consequence is transcript_ablation or Consequence is splice_donor_variant or Consequence is splice_acceptor_variant or Consequence is stop_gained or Consequence is frameshift_variant or Consequence is inframe_insertion or Consequence is inframe_deletion or Consequence is splice_region_variant"
-
-#4. Filter for Intergenic Variants
 Bash
 /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/ensembl-vep/filter_vep \
-  -i /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated_Individuals.txt \
-  -o /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Clouded_leopard_intergenic_sites.txt \
+  -i /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated.txt \
+  -o /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Final_Annotation/Clouded_leopard_missense_sites.txt \
+  --filter "Consequence is missense_variant"
+2. Filter for Synonymous Variants
+Use this for "silent" mutations (Low impact), often used as a neutral baseline.
+
+Bash
+/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/ensembl-vep/filter_vep \
+  -i /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated.txt \
+  -o /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Final_Annotation/Clouded_leopard_synonymous_sites.txt \
+  --filter "Consequence is synonymous_variant"
+3. Filter for Loss of Function (LoF) & Splicing
+Use this for High Impact variants that likely break gene function.
+
+Bash
+/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/ensembl-vep/filter_vep \
+  -i /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated.txt \
+  -o /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Final_Annotation/Clouded_leopard_lof_sites.txt \
+  --filter "Consequence is transcript_ablation or Consequence is splice_donor_variant or Consequence is splice_acceptor_variant or Consequence is stop_gained or Consequence is frameshift_variant or Consequence is inframe_insertion or Consequence is inframe_deletion or Consequence is splice_region_variant"
+4. Filter for Intergenic Variants
+Use this for variants in non-coding regions between genes.
+
+Bash
+/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/ensembl-vep/filter_vep \
+  -i /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated.txt \
+  -o /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Final_Annotation/Clouded_leopard_intergenic_sites.txt \
   --filter "Consequence is intergenic_variant"
 ```
 
@@ -349,43 +351,58 @@ grep -v "^#" Clouded_leopard_intergenic_sites.txt | awk '{print $2}' | tr ':' '\
 #### Step 12.c Extract the Genotypes from the polarized vcf
 - Go to the polarized vcf and pull out the only SNPs taht fall into these categories.
 ```bash
-# 1. Define Absolute Paths
-# Setting base directory to ensure all relative paths are resolved correctly
-BASE_DIR="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP"
-OUTDIR="${BASE_DIR}/Final_Annotation/Extract_Genotypes"
-POLAR_VCF="${BASE_DIR}/Clouded_leopard_POLARIZED_Final.vcf"
+#!/bin/bash
 
-# Specify the Plink binary path
+# 1. Define Absolute Paths
+# Path to your polarized VCF
+POLAR_VCF="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Clouded_leopard_FINAL_FIXED.vcf"
+
+# Path to your VEP filtered files
+VEP_DIR="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Final_Annotation"
+
+# Final Destination for R-ready files
+OUTDIR="${VEP_DIR}/Final_output_for_R"
+
+# Plink binary
 PLINK_BIN="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink"
 
-# Create the output directory if it doesn't already exist
+# Create output directory
 mkdir -p $OUTDIR
 
-# 2. Main Processing Loop
-# Iterate through each variant category to extract genotypes
+# 2. Extract Coordinate Lists (Chrom and Position) from VEP files
+# This creates the {type}_IDs.txt files needed by vcftools
+for type in missense synonymous lof intergenic
+do
+    echo "Creating coordinate list for $type..."
+    grep -v "^#" ${VEP_DIR}/Clouded_leopard_${type}_sites.txt | awk -F'\t' '{print $2}' | sed 's/:/\t/' > ${OUTDIR}/${type}_IDs.txt
+done
+
+# 3. Main Processing Loop
 for type in missense synonymous lof intergenic
 do
     echo "------------------------------------------"
     echo "Processing $type sites..."
     
-    # Extract specific SNPs from the polarized VCF using the coordinate lists
-    # Output is saved as a temporary recoded VCF
+    # Extract specific SNPs from the polarized VCF
     vcftools --vcf $POLAR_VCF \
-        --positions ./${type}_IDs.txt \
+        --positions ${OUTDIR}/${type}_IDs.txt \
         --recode --recode-INFO-all \
         --out ${OUTDIR}/temp_${type}
 
-    # Convert the filtered VCF to PLINK A-transpose (.traw) format
-    # This creates a count matrix (0, 1, 2) of derived alleles for R analysis
+    # Convert to PLINK A-transpose (.traw) format
+    # This gives you the 0, 1, 2 count of the ALT (derived) allele
     $PLINK_BIN --vcf ${OUTDIR}/temp_${type}.recode.vcf \
         --export A-transpose \
         --allow-extra-chr \
         --double-id \
         --out ${OUTDIR}/Clouded_leopard_${type}_genotypes
 
-    # Remove temporary VCF files to save disk space
+    # Cleanup temporary files
     rm ${OUTDIR}/temp_${type}.recode.vcf
+    rm ${OUTDIR}/temp_${type}.log
 done
+
+echo "Done! Files are ready in $OUTDIR"
 
 echo "------------------------------------------"
 echo "Extraction Complete. Files are located in: $OUTDIR"
