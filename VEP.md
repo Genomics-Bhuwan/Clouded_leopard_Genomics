@@ -153,10 +153,15 @@ tabix -p vcf "$VCF_OUT.gz"
 #### Step 4.a. Convert the vcf file to .bed file format using plink
 ```bash
 # Define your paths
-IN_VCF="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Clouded_leopard_27samples_RefSeq_Standardized.vcf.gz"
-OUT_DIR="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output"
-PLINK_EXE="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink"
-# Run the conversion
+# 1. Define Paths
+IN_VCF="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Clouded_leopard_27samples_Final_QC.recode.vcf.gz"
+OUT_DIR="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF"
+PLINK_EXE="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/plink"
+
+# 2. Ensure output directory exists
+mkdir -p "$OUT_DIR"
+
+# 3. Run PLINK conversion
 $PLINK_EXE --vcf "$IN_VCF" \
 --make-bed \
 --allow-extra-chr \
@@ -171,13 +176,19 @@ awk 'BEGIN{OFS="\t"} {print $1, $4-1, $4}' Clouded_leopard_Final_Binary.bim > Cl
   
 ```bash
 module load bedtools-2.28
+
 # 2. Define your paths
+
 FASTA="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Tiger_Lion_Consensus.fa"
-BED="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Clouded__SNPs_Coordinates.bed"
-OUT_FILE="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/ancestral_alleles.out"
+
+BED="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Clouded__SNPs_Coordinates.bed"
+
+OUT_FILE="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/ancestral_alleles.out"
 
 # 3. Extract the ancestral base
+
 # Note: Ensure the FASTA is unzipped first
+
 bedtools getfasta -fi $FASTA -bed $BED -fo $OUT_FILE
 ```
 #### Step 5. Reformat the Ancestral Alleles.
@@ -199,17 +210,18 @@ paste positions_only.txt alleles_only.txt > ancestral_alleles.txt
 - PLINK needs the IDs in your vcf to match the IDs in your ancestral_alleles.txt
 - A file named temp_Clouded_leopard.vcf where every SNP is named Chromosome: Position.
 ```bash
-# Navigate to your Plink folder
-cd /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output
+# Define your output prefix
+OUT_PREFIX="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/temp_Clouded_leopard"
 
-# Run the conversion
-/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink --vcf /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Clouded_leopard_27samples_RefSeq_Standardized.vcf.gz \
+# Run PLINK
+/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink \
+  --vcf /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Clouded_leopard_27samples_Final_QC.recode.vcf.gz \
   --set-missing-var-ids @:# \
   --allow-extra-chr \
   --recode vcf \
   --const-fid 0 \
   --real-ref-alleles \
-  --out temp_Clouded_leopard
+  --out "$OUT_PREFIX"
 ```
 
 #### Step 7. Polarize (Big Switch)
@@ -221,31 +233,43 @@ awk '{print $1}' ancestral_alleles.txt > ancestral_positions.txt
 # 2. Run the polarization
 # Run PLINK with absolute paths for the binary and the standardized VCF
 # Run the polarization
-# Run the polarization
-/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink --vcf /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/temp_Clouded_leopard.vcf \
+# Define your binary path and output prefix
+PLINK_EXE="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink"
+OUT_PREFIX="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/temp_Clouded_leopard_polarized"
+
+# Run polarization
+$PLINK_EXE \
+  --vcf /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/temp_Clouded_leopard.vcf \
   --extract ancestral_positions.txt \
   --a2-allele ancestral_alleles.txt 2 1 \
   --recode vcf \
   --allow-extra-chr \
   --const-fid 0 \
-  --out temp_Clouded_leopard_polarized
+  --out "$OUT_PREFIX"
 ```    
 
 #### Step 8. Final Cleanup(Removing Mismatches)
 - Remove the SNPs where the ancestral letter doesn't match the Clouded_leopard letters (e.g., Ancestral has "A", but Clouded_leopard only has "C/G")
 ```bash
 # 1. Identify the mismatches from the log file
-grep "Impossible A2" Clouded_leopard_POLARIZED.log | awk '{print $NF}' | sed 's/\.$//' > mismatches.txt
+grep "Impossible A2" temp_Clouded_leopard_polarized.log | awk '{print $NF}' | sed 's/\.$//' > mismatches.txt
 
 # 2. Create the final, clean, polarized VCF
 # Final PLINK clean-up using absolute paths
-/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink \
-  --vcf Clouded_leopard_POLARIZED.vcf \
-  --exclude mismatches.txt \
+# Define your paths for clarity
+PLINK_EXE="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/plink"
+IN_VCF="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/temp_Clouded_leopard_polarized.vcf"
+EXCLUDE_FILE="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/mismatches.txt"
+OUT_PREFIX="/shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Clouded_leopard_POLARIZED_Final"
+
+# Run the final cleanup
+$PLINK_EXE \
+  --vcf "$IN_VCF" \
+  --exclude "$EXCLUDE_FILE" \
   --allow-extra-chr \
   --const-fid 0 \
   --recode vcf \
-  --out /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Clouded_leopard_POLARIZED_Final.vcf
+  --out "$OUT_PREFIX"
 
 # 3. Clean up the temporary files to save space
 rm temp_Clouded_leopard.vcf temp_Clouded_leopard_polarized.vcf alleles_only.txt positions_only.txt
@@ -271,12 +295,16 @@ tabix -p gff /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_
 
 ##### Step 9.b. Run the VEP
 ```bash
+# 1. Create the output directory just in case
+mkdir -p /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Final_Annotation/
+
+# 2. Run the Singularity VEP command
 singularity exec \
   -B /shared/jezkovt_bistbs_shared \
   /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/ensembl-vep/ensembl-vep_latest.sif \
   vep \
-  --input_file /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Clouded_leopard_POLARIZED_Final.vcf \
-  --output_file /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated_Individuals.txt \
+  --input_file /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Clouded_leopard_POLARIZED_Final.vcf \
+  --output_file /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Final_Annotation/Clouded_leopard_Annotated_Individuals.txt \
   --fasta /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/GCF_028018385.1_mNeoNeb1.pri_genomic.fna \
   --gff /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/GCF_028018385.1_mNeoNeb1.pri_genomic_sorted.gff.gz \
   --dir_cache /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/dummy_vep_cache \
@@ -287,7 +315,7 @@ singularity exec \
   --fork 8 \
   --buffer_size 5000 \
   --force_overwrite \
-  --warning_file /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Plink_Output/Final_VEP/vep_warnings.txt \
+  --warning_file /shared/jezkovt_bistbs_shared/Clouded_leopard_Genomics_Project/VEP_Polarization/Outgroup_Consensus/Chromosomes_name_conversion/Bhuwan_Filtered_VCF/Plink_output/Final_VEP/Final_Annotation/vep_warnings.txt \
   --individual all
 ```
 
