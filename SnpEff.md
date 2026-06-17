@@ -7,10 +7,6 @@
 
 set -euo pipefail
 
-########################################
-# VARIABLES
-########################################
-
 PROJECT=$HOME/Clouded_leopard_SNPeff
 SNPEFF=${PROJECT}/snpEff
 
@@ -25,16 +21,11 @@ INPUT_VCF="${PROJECT}/Clouded_leopard_27samples_RefSeq_Standardized.vcf.gz"
 OUTPUT_VCF="${PROJECT}/Clouded_leopard_27samples_annotated.vcf.gz"
 REPORT_HTML="${PROJECT}/snpeff_report.html"
 
-########################################
-# CREATE DATABASE DIRECTORY
-########################################
+- Create a database directory
 
 mkdir -p ${SNPEFF}/data/${GENOME_ID}
 
-########################################
-# PREPARE GENOME FILES
-########################################
-
+- Prepare the genome files
 echo "Preparing genome annotation files..."
 
 gunzip -c ${GENOME_GFF} \
@@ -43,10 +34,7 @@ gunzip -c ${GENOME_GFF} \
 cp ${GENOME_FASTA} \
    ${SNPEFF}/data/${GENOME_ID}/sequences.fa
 
-########################################
-# UPDATE SNPEFF CONFIG
-########################################
-
+- Update the SNPEFF config
 echo "Checking snpEff.config..."
 
 if ! grep -q "^${GENOME_ID}\.genome" ${SNPEFF}/snpEff.config; then
@@ -54,9 +42,7 @@ if ! grep -q "^${GENOME_ID}\.genome" ${SNPEFF}/snpEff.config; then
     >> ${SNPEFF}/snpEff.config
 fi
 
-########################################
-# BUILD DATABASE
-########################################
+- build database
 
 echo "Building SnpEff database..."
 
@@ -67,9 +53,7 @@ java -Xmx70g -jar snpEff.jar build \
     -v \
     ${GENOME_ID}
 
-########################################
-# ANNOTATE VARIANTS
-########################################
+- Annotate the variants
 
 echo "Annotating variants..."
 
@@ -80,17 +64,13 @@ java -Xmx32g -jar snpEff.jar ann \
     ${INPUT_VCF} \
     | bgzip > ${OUTPUT_VCF}
 
-########################################
-# INDEX OUTPUT VCF
-########################################
+- Index the output VCF
 
 echo "Indexing annotated VCF..."
 
 tabix -p vcf ${OUTPUT_VCF}
 
-########################################
-# CHECK OUTPUT
-########################################
+- Check the output
 
 echo "Annotation complete."
 
